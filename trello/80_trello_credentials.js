@@ -1,9 +1,8 @@
 module.exports = function (RED) {
 
-// credentials
-  function TrelloNode (config) {
+function TrelloNode (config) {
     RED.nodes.createNode(this, config)
-    this.memberId = config.memberId
+    this.name = config.name
     this.apikey = config.apikey
     this.secret = config.secret
   }
