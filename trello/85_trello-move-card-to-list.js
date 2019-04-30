@@ -9,7 +9,7 @@ module.exports = function (RED) {
     var credentialNode = RED.nodes.getNode(config.trello)
     var trello = new Trello(credentialNode.apikey, credentialNode.secret)
     this.on('input', function (msg) {
-      var trelloData = msg.trello || {}
+      var trelloData = msg.trello || msg.payload || {}
       var idList = trelloData.idList || config.idList
       var idCard = trelloData.idCard || config.idCard
       trello.put(
