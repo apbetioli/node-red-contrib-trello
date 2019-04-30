@@ -15,6 +15,12 @@ Currently there are only some functions from the [API](https://developers.trello
 Following functions are available:
 
 * add card
+* add checklist
 * add checklist item
-* get list informations
+* add comment
+* close card (archive)
+* delete card
+* get list
 * get cards of list
+* move card to list
+* move position on list
