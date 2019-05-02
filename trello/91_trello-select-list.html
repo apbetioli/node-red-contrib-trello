@@ -1,0 +1,177 @@
+<script type="text/javascript">
+    RED.nodes.registerType('trello-select-list', {
+      category: 'trello',
+      color: '#8BBDD9',
+      defaults: {
+        trello: {value:'', type:'trello-credentials', required:true},
+        name: {value: ''},
+        idList: {value: '', required:true},
+        idBoard: {value: '', required:true}
+      },
+      inputs:1,
+      outputs:1,
+      icon: "trello.png", 
+      label: function() {
+          return this.name || "select list";
+      },
+      paletteLabel: "select list",
+      oneditprepare: function () {
+        const originalContext = this;
+
+        function setupHooks(trelloID) {
+          let boardList;
+          let credentialNode;
+          if (trelloID) {
+            credentialNode = RED.nodes.node(trelloID);
+          } else {
+            credentialNode = RED.nodes.node(originalContext.trello);
+          }
+          if (credentialNode) {
+            if (credentialNode.apikey && credentialNode.secret) {
+
+              // When the board id is changed update the list selection box
+              $("#node-input-idBoard").change(function (e) {
+                const listList = $("#node-input-idList");
+                // clear the list ready for populating
+                listList.empty();
+                // Fetch Trello list data for selected board
+                const boardID = $(this).val(); // Gets the ID of the selected board
+                if (boardID !== '') { // happens when value isn't selected for board
+                  // add loading placeholder
+                  const listListFirstContainer = $('<option/>', {class: "node-input-option-node", value: ''});
+                  const listListFirstText = $('<span>', {class: "node-input-option-text"}).text("Loading...");
+                  listListFirstText.appendTo(listListFirstContainer);
+                  listListFirstContainer.appendTo(listList);
+                  const url = 'https://api.trello.com/1/boards/' + boardID + '/lists?key=' + credentialNode.apikey + '&token=' + credentialNode.secret;
+                  $.get(url, function (data, status) {
+                    let selectList = $("#node-input-idList");
+                    // Now we have the list data clear the list and update it with a hint and each Trello list
+                    selectList.empty();
+                    const containerFirst = $('<option/>', {class: "node-input-option-node", value: ''});
+                    const text = $('<span>', {class: "node-input-option-text"}).text("Select one");
+                    text.appendTo(containerFirst);
+                    containerFirst.appendTo(selectList);
+                    for (let i = 0; i < data.length; i++) { // Add all cards in Trello list to selection box, no need to check if it is the same as the
+                      let container = $('<option/>', {class: "node-input-option-node", value: data[i].id});
+                      if (originalContext.idList === data[i].id) {
+                        container = $('<option/>', {class: "node-input-option-node", selected: "selected", value: data[i].id});
+                      }
+                      const textName = $('<span>', {class: "node-input-option-text"}).text(data[i].name + ": ");
+                      const textID = $('<span>', {class: "node-input-option-text", style: "color: grey;"}).text(data[i].id); // for some reason can't change the colour
+                      textID.appendTo(textName);
+                      textName.appendTo(container);
+                      container.appendTo(selectList);
+                    }
+                  });
+                } else {
+                  const listListFirstContainer = $('<option/>', {class: "node-input-option-node", value: ''});
+                  const listListFirstText = $('<span>', {class: "node-input-option-text"}).text("Select a board first");
+                  listListFirstText.appendTo(listListFirstContainer);
+                  listListFirstContainer.appendTo(listList);
+                }
+              });
+
+              boardList = $("#node-input-idBoard");
+              boardList.empty();
+              // clear the list and add a placeholder to show it loading
+              const boardListFirstConainer = $('<option/>', {class: "node-input-option-node", value: ''});
+              const boardListFirstText = $('<span>', {class: "node-input-option-text"}).text("Loading...");
+              boardListFirstText.appendTo(boardListFirstConainer);
+              boardListFirstConainer.appendTo(boardList);
+              // Get Trello boards assigned to user
+              const url = 'https://api.trello.com/1/members/me/boards?key=' + credentialNode.apikey + '&token=' + credentialNode.secret;
+              
+              $.get(url, function (data, status) {
+                const boardList = $("#node-input-idBoard");
+                boardList.empty();
+                const boardListFirstContainer = $('<option/>', {class: "node-input-option-node", value: ''});
+                const boardListFirstText = $('<span>', {class: "node-input-option-text"}).text("Select one");
+                boardListFirstText.appendTo(boardListFirstContainer);
+                boardListFirstContainer.appendTo(boardList);
+                for (let i = 0; i < data.length; i++) {
+                  let container = $('<option/>', {class: "node-input-option-node", value: data[i].id});
+                  if (originalContext.idBoard === data[i].id) {
+                    container = $('<option/>', {class: "node-input-option-node", selected: "selected", value: data[i].id});
+                  }
+                  const textName = $('<span>', {class: "node-input-option-text"}).text(data[i].name + ": ");
+                  const textID = $('<span>', {class: "node-input-option-text", style: "color: grey;"}).text(data[i].id); // for some reason can't change the colour
+                  textID.appendTo(textName);
+                  textName.appendTo(container);
+                  container.appendTo(boardList);
+                }
+                boardList.change(); // used to trigger update in list list
+              });
+
+
+            }
+
+          } else { // No trello credentials fill both selection boxes with hints to select credentials
+            boardList = $("#node-input-idBoard");
+            boardList.empty();
+            const boardListFirstContainer = $('<option/>', {class: "node-input-option-node", value: ''});
+            const boardListFirstText = $('<span>', {class: "node-input-option-text"}).text('No credentials');
+            boardListFirstText.appendTo(boardListFirstContainer);
+            boardListFirstContainer.appendTo(boardList);
+
+            const listList = $("#node-input-idList");
+            listList.empty();
+            const listListFirstContainer = $('<option/>', {class: "node-input-option-node", value: ''});
+            const listListFirstText = $('<span>', {class: "node-input-option-text"}).text('No credentials');
+            listListFirstText.appendTo(listListFirstContainer);
+            listListFirstContainer.appendTo(listList);
+          }
+        }
+
+        $("#node-input-trello").change(function (e) { // rerun if credentials changed
+          const trelloID = $(this).val();
+          setupHooks(trelloID);
+        });
+
+        // Populate the boxes with the only values we have stored
+        if (this.idList) {
+          const listList = $("#node-input-idList");
+          listList.empty();
+          const listListFirstContainer = $('<option/>', {class: "node-input-option-node", value: this.idList});
+          const listListFirstText = $('<span>', {class: "node-input-option-text"}).text(this.idList);
+          listListFirstText.appendTo(listListFirstContainer);
+          listListFirstContainer.appendTo(listList);
+        }
+        if (this.idBoard) {
+          let boardList = $("#node-input-idBoard");
+          boardList.empty();
+          const boardListFirstContainer = $('<option/>', {class: "node-input-option-node", value: this.idBoard});
+          const boardListFirstText = $('<span>', {class: "node-input-option-text"}).text(this.idBoard);
+          boardListFirstText.appendTo(boardListFirstContainer);
+          boardListFirstContainer.appendTo(boardList);
+        }
+        setupHooks();
+      }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="trello-select-list">
+    <div class="form-row">
+      <label for="node-input-trello">Trello</label>
+      <input id="node-input-trello"></input>
+    </div>
+    <div class="form-row">
+      <label for="node-input-name">Name</label>
+      <input id="node-input-name"></input>
+    </div>
+    <div class="form-row">
+      <label for="node-input-idBoard">Board</label>
+      <select id="node-input-idBoard">
+        <option disabled selected value="">Select one</option>
+      </select>  
+    </div>
+    <div class="form-row">
+      <label for="node-input-idList">List</label>
+      <select id="node-input-idList">
+        <option disabled selected value="">Select one</option>
+      </select> 
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="trello-select-list">
+    <p>Select a board and a list and return it's ids</p>
+</script>

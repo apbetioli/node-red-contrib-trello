@@ -24,3 +24,4 @@ Following functions are available:
 * get cards of list
 * move card to list
 * move position on list
+* select list
