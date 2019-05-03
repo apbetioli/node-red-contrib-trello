@@ -25,3 +25,4 @@ Following functions are available:
 * move card to list
 * move position on list
 * select list
+* select labels

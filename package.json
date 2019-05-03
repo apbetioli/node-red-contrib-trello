@@ -26,7 +26,8 @@
       "trello-create-checklist": "trello/88_trello-create-checklist.js",
       "trello-delete-card": "trello/89_trello-delete-card.js",
       "trello-close-card": "trello/90_trello-close-card.js",
-      "trello-select-list": "trello/91_trello-select-list.js"
+      "trello-select-list": "trello/91_trello-select-list.js",
+      "trello-select-labels": "trello/92_trello-select-labels.js"
     }
   },
   "repository": {

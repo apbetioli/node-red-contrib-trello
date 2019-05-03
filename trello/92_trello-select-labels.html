@@ -1,0 +1,134 @@
+<script type="text/javascript">
+    RED.nodes.registerType('trello-select-labels', {
+      category: 'trello',
+      color: '#8BBDD9',
+      defaults: {
+        trello: {value:'', type:'trello-credentials', required:true},
+        name: {value: ''},
+        idBoard: {value: '', required:true},
+        labels: {value: []}
+      },
+      inputs:1,
+      outputs:1,
+      icon: "trello.png", 
+      label: function() {
+          return this.name || "select labels";
+      },
+      paletteLabel: "select labels",
+      oneditprepare: function () {
+        const originalContext = this;
+
+        function addDataToSelect(list, data, idSelected) {
+          for (let i = 0; i < data.length; i++) {
+            let container = $('<option/>', {class: "node-input-option-node", value: data[i].id});
+            if (idSelected.includes(data[i].id)) {
+              container = $('<option/>', {class: "node-input-option-node", selected: "selected", value: data[i].id});
+            }
+            const textName = $('<span>', {class: "node-input-option-text"}).text(data[i].name);
+            textName.appendTo(container);
+            container.appendTo(list);
+          }
+          list.change();
+        }
+
+        function clearSelect(list, firstLabel="Select one", firstValue='') {
+            list.empty();
+            const listFirstContainer = $('<option/>', {class: "node-input-option-node", value: firstValue});
+            const listFirstText = $('<span>', {class: "node-input-option-text"}).text(firstLabel);
+            listFirstText.appendTo(listFirstContainer);
+            listFirstContainer.appendTo(list);
+        }
+
+        function loadBoards(credentialNode) {
+            const boardList = $("#node-input-idBoard");
+            clearSelect(boardList, "Loading...");
+
+            const url = 'https://api.trello.com/1/members/me/boards?key=' + credentialNode.apikey + '&token=' + credentialNode.secret;
+            $.get(url, function (data, status) {
+              clearSelect(boardList);
+              addDataToSelect(boardList, data, originalContext.idBoard);
+            });
+        }
+
+        function loadLabels(credentialNode, boardID) {
+          const selectList = $("#node-input-labels");
+          if (boardID !== '') { 
+            clearSelect(selectList, "Loading...");
+            const url = 'https://api.trello.com/1/boards/' + boardID + '/labels?key=' + credentialNode.apikey + '&token=' + credentialNode.secret;
+            $.get(url, function (data, status) {
+              selectList.empty();
+              addDataToSelect(selectList, data, originalContext.labels);
+            });
+
+          } else {
+            clearSelect(selectList, "Select a board first");
+          }
+        }
+
+        function getCredentialNode(trelloID) {
+          if (trelloID)
+            return RED.nodes.node(trelloID);
+          else
+            return RED.nodes.node(originalContext.trello);
+        }
+
+        function setupHooks(trelloID) {
+          const credentialNode = getCredentialNode(trelloID);
+
+          if (credentialNode) {
+            if(credentialNode.apikey && credentialNode.secret) {
+              $("#node-input-idBoard").change(function (e) {
+                const boardID = $(this).val();
+                loadLabels(credentialNode, boardID);
+              });
+
+              loadBoards(credentialNode);
+            }
+          } else { 
+            clearSelect($("#node-input-idBoard"), "No credentials");
+            clearSelect($("#node-input-labels"), "No credentials");
+          }
+        }
+
+        $("#node-input-trello").change(function (e) {
+          const trelloID = $(this).val();
+          setupHooks(trelloID);
+        });
+
+        if (this.labels) 
+          clearSelect($("#node-input-labels"), this.labels, this.labels);
+        
+        if (this.idBoard)
+          clearSelect($("#node-input-idBoard"), this.idBoard, this.idBoard);
+        
+        setupHooks();
+      }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="trello-select-labels">
+    <div class="form-row">
+      <label for="node-input-trello">Trello</label>
+      <input id="node-input-trello"></input>
+    </div>
+    <div class="form-row">
+      <label for="node-input-name">Name</label>
+      <input id="node-input-name"></input>
+    </div>
+    <div class="form-row">
+      <label for="node-input-idBoard">Board</label>
+      <select id="node-input-idBoard">
+        <option disabled selected value="">Select one</option>
+      </select>  
+    </div>
+    <div class="form-row">
+      <label for="node-input-labels">Labels</label>
+      <select id="node-input-labels" multiple="true">
+        <option disabled selected value="">Select</option>
+      </select> 
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="trello-select-labels">
+    <p>Select labels from a board and return it's ids</p>
+</script>
