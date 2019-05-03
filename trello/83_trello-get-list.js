@@ -15,7 +15,7 @@ module.exports = function (RED) {
         (err, data) => {
           if (err) { node.error(err) }
           node.send({ 
-            payload: data
+            payload: Object.assign(msg.payload, data)
           })
         }
       )

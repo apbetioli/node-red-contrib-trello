@@ -19,15 +19,15 @@ module.exports = function (RED) {
         idLabels: trelloData.idLabels || config.idLabels
       }
       trello.post(
-        '/1/cards',
-        sendData,
+        '/1/cards', 
+        sendData, 
         (err, data) => {
           if (err) { node.error(err) }
           node.send({ 
-            payload: {
+            payload: Object.assign(msg.payload, {
               idCard: data.id,
               card: data 
-            }
+            })
           })
         }
       )

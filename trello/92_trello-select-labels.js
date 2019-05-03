@@ -1,7 +1,6 @@
 module.exports = function (RED) {
   function TrelloSelectLabelsNode (config) {
     RED.nodes.createNode(this, config)
-    console.log(config)
     this.name = config.name
     this.idBoard = config.idBoard
     this.labels = config.labels

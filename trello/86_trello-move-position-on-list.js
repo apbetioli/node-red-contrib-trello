@@ -19,10 +19,10 @@ module.exports = function (RED) {
         (err, data) => {
           if (err) { node.error(err) }
           node.send({ 
-            payload: {
+            payload: Object.assign(msg.payload, {
               idCard, idCard,
               card: data
-            }
+            })
           })
         }
       )
